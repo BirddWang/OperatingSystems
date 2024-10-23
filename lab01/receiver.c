@@ -85,7 +85,7 @@ int main(int argc, char* argv[]){
         exit(1);
     }
 
-    message_t message;
+    message_t* message = (message_t*)malloc(sizeof(message_t));
 
     // semaphore
     sem_t* sender_sem = sem_open("sender_sem", 0);
@@ -101,11 +101,11 @@ int main(int argc, char* argv[]){
     sem_wait(receiver_sem);
     // main
     while(1) {
-        time_taken += receive_and_get_time(&message, &mailbox);
-        if(strcmp(message.msg_text, "\n") == 0) {
+        time_taken += receive_and_get_time(message, &mailbox);
+        if(strcmp(message->msg_text, "\n") == 0) {
             break;
         }
-        fprintf(stderr, "Receiving message: %s", message.msg_text);
+        fprintf(stderr, "Receiving message: %s", message->msg_text);
         sem_post(sender_sem);
         sem_wait(receiver_sem);
     }
@@ -123,5 +123,6 @@ int main(int argc, char* argv[]){
         perror("sem_unlink");
         exit(1);
     }
+    free(message);
     return 0;
 }
