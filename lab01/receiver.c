@@ -9,7 +9,7 @@ void receive(message_t* message_ptr, mailbox_t* mailbox_ptr){
     */
     if(mailbox_ptr->flag == 1) {
         // 1: Message Passing
-        if(msgrcv(mailbox_ptr->storage.msqid, message_ptr, sizeof(message_t), message_ptr->msg_type, 0) == -1) {
+        if(msgrcv(mailbox_ptr->storage.msqid, message_ptr, sizeof(message_t), 1, 0) == -1) {
             perror("msgrcv");
             return;
         }
@@ -21,6 +21,14 @@ void receive(message_t* message_ptr, mailbox_t* mailbox_ptr){
     }
     return;
 }
+
+double receive_and_get_time(message_t* message_ptr, mailbox_t* mailbox_ptr) {
+    clock_gettime(1, &start);
+    receive(message_ptr, mailbox_ptr);
+    clock_gettime(1, &end);
+    return (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) * 1e-9;
+}
+
 // create message queue
 int create_msq_id() {
     key_t key = ftok("msqid", 1);
@@ -90,23 +98,30 @@ int main(int argc, char* argv[]){
     // time record
     double time_taken = 0.0;
 
+    sem_wait(receiver_sem);
     // main
     while(1) {
-        sem_wait(receiver_sem);
-        clock_gettime(CLOCK_MONOTONIC, &start);
-        receive(&message, &mailbox);
-        clock_gettime(CLOCK_MONOTONIC, &end);
-        time_taken += (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) * 1e-9;
-        if(strcmp(message.msg_text, "exit") == 0 || message.msg_type == 2) {
+        time_taken += receive_and_get_time(&message, &mailbox);
+        if(strcmp(message.msg_text, "\n") == 0) {
             break;
         }
         fprintf(stderr, "Receiving message: %s", message.msg_text);
         sem_post(sender_sem);
+        sem_wait(receiver_sem);
     }
+    fprintf(stderr, "\nSender exit!\n");
+    fprintf(stderr, "Total time in receiving msg: %lf s", time_taken);
+    // end call
     sem_post(sender_sem);
-    fprintf(stdout, "\nSender exit!\n");
-    fprintf(stdout, "Total time in receiving msg: %lf s\n", time_taken);
-    sem_close(receiver_sem);
-    sem_unlink("receiver_sem");
+
+    // close receive semaphore
+    if(sem_close(receiver_sem) == -1) {
+        perror("sem_close");
+        exit(1);
+    }
+    if(sem_unlink("receiver_sem") == -1) {
+        perror("sem_unlink");
+        exit(1);
+    }
     return 0;
 }

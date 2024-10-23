@@ -21,6 +21,14 @@ void send(message_t message, mailbox_t* mailbox_ptr){
     }
     return;
 }
+
+double send_and_get_time(message_t message, mailbox_t* mailbox_ptr) {
+    clock_gettime(1, &start);
+    send(message, mailbox_ptr);
+    clock_gettime(1, &end);
+    return (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) * 1e-9;
+}
+
 // create message queue
 int create_msq_id() {
     key_t key = ftok("msqid", 1);
@@ -102,27 +110,42 @@ int main(int argc, char* argv[]){
     sem_post(sender_sem);
     while(fgets(message.msg_text, sizeof(message.msg_text), fp) != NULL) {
         sem_wait(sender_sem);
-        clock_gettime(CLOCK_MONOTONIC, &start);
-        send(message, &mailbox);
-        clock_gettime(CLOCK_MONOTONIC, &end);
-        time_taken += (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) * 1e-9;
+        time_taken += send_and_get_time(message, &mailbox);
         fprintf(stderr, "Sending message: %s", message.msg_text);
         sem_post(receiver_sem);
     }
 
     // edit exit message
-    message.msg_type = 2;
-    strcpy(message.msg_text, "exit");
+    strcpy(message.msg_text, "\n");
+
     // send exit message
     sem_wait(sender_sem);
-    clock_gettime(CLOCK_MONOTONIC, &start);
-    send(message, &mailbox);
-    clock_gettime(CLOCK_MONOTONIC, &end);
-    time_taken += (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) * 1e-9;
-    sem_post(receiver_sem);
-    sem_wait(sender_sem);
+    time_taken += send_and_get_time(message, &mailbox);
     fprintf(stdout, "\nEnd of input file! exit!\n");
-    fprintf(stdout, "Total time taken in sending msg: %lf s\n", time_taken);
+    sem_post(receiver_sem);
+
+    // end of sender
+    fprintf(stdout, "Total time taken in sending msg: %lf s", time_taken);
+
+    // get end call
+    sem_wait(sender_sem);
+    // clean up
+    if(mechanism == 1) {
+        if(msgctl(mailbox.storage.msqid, IPC_RMID, NULL) == -1) {
+            perror("msgctl");
+            exit(1);
+        }
+    }
+    else if(mechanism == 2) {
+        if(shmdt(mailbox.storage.shm_addr) == -1) {
+            perror("shmdt");
+            exit(1);
+        }
+        if(shmctl(create_shm_id(), IPC_RMID, NULL) == -1) {
+            perror("shmctl");
+            exit(1);
+        }
+    }
     sem_close(sender_sem);
     sem_unlink("sender_sem");
     // close file and return
