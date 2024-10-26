@@ -4,3 +4,6 @@
 # Compiled source #
 lab01/receiver
 lab01/sender
+
+# Object files #
+*.o
