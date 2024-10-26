@@ -55,6 +55,28 @@ int help(char **args)
 // ======================= requirement 2.1 =======================
 int cd(char **args)
 {
+	// If no argument is given, go to the home directory
+	// If the argument is "..", go to the parent directory
+	// If the argument is a directory, go to the directory
+	// If the argument is a file, print an error message
+	if (args[1] == NULL) {
+		chdir(getenv("HOME"));
+	}
+	else {
+		if (strcmp(args[1], "..") == 0) {
+			chdir("..");
+		}
+		else {
+			DIR *dir = opendir(args[1]);
+			if (dir) {
+				chdir(args[1]);
+				closedir(dir);
+			}
+			else {
+				printf("cd: %s: No such file or directory\n", args[1]);
+			}
+		}
+	}
 	return 1;
 }
 // ===============================================================

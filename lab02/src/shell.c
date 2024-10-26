@@ -20,7 +20,30 @@
  * 
  */
 void redirection(struct cmd_node *p){
-	
+	if(p->in_file) {
+		int fd = open(p->in_file, O_RDONLY);
+		if(fd == -1) {
+			perror("open");
+			exit(EXIT_FAILURE);
+		}
+		if(dup2(fd, 0) == -1) {
+			perror("dup2");
+			exit(EXIT_FAILURE);
+		}
+		close(fd);
+	}
+	if(p->out_file) {
+		int fd = open(p->out_file, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+		if(fd == -1) {
+			perror("open");
+			exit(EXIT_FAILURE);
+		}
+		if(dup2(fd, 1) == -1) {
+			perror("dup2");
+			exit(EXIT_FAILURE);
+		}
+		close(fd);
+	}
 }
 // ===============================================================
 
@@ -37,6 +60,19 @@ void redirection(struct cmd_node *p){
  */
 int spawn_proc(struct cmd_node *p)
 {
+	pid_t pid;
+	int status;
+	pid = fork();
+	if(pid == 0) {
+		if(execvp(p->args[0], p->args) == -1){
+			perror("execvp");
+			exit(EXIT_FAILURE);
+		}
+	}
+	else if(pid < 0) {
+		perror("fork");
+		exit(EXIT_FAILURE);
+	}
   	return 1;
 }
 // ===============================================================
@@ -53,6 +89,10 @@ int spawn_proc(struct cmd_node *p)
  */
 int fork_cmd_node(struct cmd *cmd)
 {
+	int pipefd[2];
+	int status;
+	pid_t pid;
+	
 	return 1;
 }
 // ===============================================================
