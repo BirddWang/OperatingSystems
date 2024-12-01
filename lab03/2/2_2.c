@@ -47,11 +47,16 @@ void data_processing(void){
 void *thread1(void *arg){
 
     /*YOUR CODE HERE*/
+    int res;
     for(int i=0; i<matrix_row_x; i++){
         for(int j=0; j<matrix_col_y; j++){
+            res = 0;
             for(int k=0; k<matrix_row_y/2; k++){
-
+                res += x[i][k]*y[k][j];
             }      
+            pthread_spin_lock(&lock);
+            z[i][j] += res;
+            pthread_spin_unlock(&lock);
         }
     }
     /****************/
@@ -61,11 +66,16 @@ void *thread1(void *arg){
 void *thread2(void *arg) {
 
     /*YOUR CODE HERE*/
+    int res;
     for(int i=0; i<matrix_row_x; i++){
         for(int j=0; j<matrix_col_y; j++){
+            res = 0;
             for(int k=matrix_row_y/2; k<matrix_row_y; k++){
-
+                res += x[i][k]*y[k][j];
             }     
+            pthread_spin_lock(&lock);
+            z[i][j] += res;
+            pthread_spin_unlock(&lock);
         }
     } 
     /****************/
