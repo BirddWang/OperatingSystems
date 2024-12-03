@@ -73,7 +73,10 @@ void *thread1(void *arg){
 
     /*YOUR CODE HERE*/
     /* Hint: Write data into proc file.*/
-
+    // write data to proc file
+    fptr4 = fopen("/proc/Mythread_info", "w");
+    fprintf(fptr4, "%s", data);
+    fclose(fptr4);
     /****************/ 
 
     char buffer[50]; 
@@ -97,7 +100,10 @@ void *thread2(void *arg){
     
     /*YOUR CODE HERE*/
     /* Hint: Write data into proc file.*/
-
+    // write data to proc file
+    fptr5 = fopen("/proc/Mythread_info", "w");
+    fprintf(fptr5, "%s", data);
+    fclose(fptr5);
     /****************/   
 
     char buffer[50]; 
