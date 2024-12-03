@@ -15,10 +15,27 @@ static ssize_t Mywrite(struct file *fileptr, const char __user *ubuf, size_t buf
 }
 
 
-static ssize_t Myread(struct file *fileptr, char __user *ubuf, size_t buffer_len, loff_t *offset){
-    /*Your code here*/
+static ssize_t Myread(struct file *fileptr, char __user *ubuf, size_t buffer_len, loff_t *offset)
+{
+    int len = 0;
+    struct task_struct *thread = NULL;
 
-    /****************/
+    if(*offset > 0){
+        return 0;
+    }
+
+    for_each_thread(current, thread) {
+        len += snprintf(buf + len, BUFSIZE - len, "PID: %d, TID: %d, Priority: %d, State: %d\n", thread->tgid, thread->tid, thread->prio, thread->__state);
+    }
+
+    int err = copy_to_user(ubuf, buf, len);
+    if(err != 0){
+        pr_info("Failed to copy data to user space");
+        return -EFAULT;
+    }
+
+    *offset = len;
+    return len;
 }
 
 static struct proc_ops Myops = {
