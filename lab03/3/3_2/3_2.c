@@ -74,6 +74,8 @@ void *thread1(void *arg){
     /*YOUR CODE HERE*/
     /* Hint: Write data into proc file.*/
     fprintf(fptr4, "%s", data);
+    fflush(fptr4);
+    fseek(fptr4, 0, SEEK_SET);
     /****************/ 
 
     char buffer[50]; 
@@ -98,6 +100,8 @@ void *thread2(void *arg){
     /*YOUR CODE HERE*/
     /* Hint: Write data into proc file.*/
     fprintf(fptr5, "%s", data);
+    fflush(fptr5);
+    fseek(fptr5, 0, SEEK_SET);
     /****************/   
 
     char buffer[50]; 
