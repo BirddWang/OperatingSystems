@@ -25,18 +25,19 @@ static ssize_t Mywrite(struct file *fileptr, const char __user *ubuf, size_t buf
 
 
 static ssize_t Myread(struct file *fileptr, char __user *ubuf, size_t buffer_len, loff_t *offset){
-    if(*offset > 0){
+    pr_info("Read Entry\n");
+    if (*offset >= buffer_len){
         return 0;
     }
 
-    int err = copy_to_user(ubuf, buf, buffer_len);
-    if(err != 0){
-        pr_info("Failed to copy data to user space");
+    size_t remain = buffer_len - *offset;
+    size_t copy_len = remain < BUFSIZE ? remain : BUFSIZE;
+    if(copy_to_user(ubuf, buf+*offset, copy_len)) {
         return -EFAULT;
     }
-
-    *offset = buffer_len;
-    return buffer_len;
+    *offset += copy_len;
+    pr_info("Read: %s\n", buf);
+    return copy_len;
 }
 
 static struct proc_ops Myops = {
