@@ -73,10 +73,9 @@ void *thread1(void *arg){
 
     /*YOUR CODE HERE*/
     /* Hint: Write data into proc file.*/
-    // write data to proc file
-    fptr4 = fopen("/proc/Mythread_info", "w");
     fprintf(fptr4, "%s", data);
-    fclose(fptr4);
+    fflush(fptr4);
+    fseek(fptr4, 0, SEEK_SET);
     /****************/ 
 
     char buffer[50]; 
@@ -100,10 +99,9 @@ void *thread2(void *arg){
     
     /*YOUR CODE HERE*/
     /* Hint: Write data into proc file.*/
-    // write data to proc file
-    fptr5 = fopen("/proc/Mythread_info", "w");
     fprintf(fptr5, "%s", data);
-    fclose(fptr5);
+    fflush(fptr5);
+    fseek(fptr5, 0, SEEK_SET);
     /****************/   
 
     char buffer[50]; 
@@ -130,8 +128,8 @@ int main(){
     fptr1 = fopen("m1.txt", "r");
     fptr2 = fopen("m2.txt", "r");
     fptr3 = fopen("3_2.txt", "a");
-    fptr4 = fopen("/proc/Mythread_info", "r");
-    fptr5 = fopen("/proc/Mythread_info", "r");
+    fptr4 = fopen("/proc/Mythread_info", "r+");
+    fptr5 = fopen("/proc/Mythread_info", "r+");
 
     pthread_t t1, t2;
     data_processing();

@@ -25,17 +25,17 @@ static ssize_t Mywrite(struct file *fileptr, const char __user *ubuf, size_t buf
 
 
 static ssize_t Myread(struct file *fileptr, char __user *ubuf, size_t buffer_len, loff_t *offset){
-    if(*offset > 0){
-        return 0;
-    }
+    size_t len = strlen(buf);
+    if (*offset >= len) return 0; // 文件已經讀取完畢
 
-    int err = copy_to_user(ubuf, buf, buffer_len);
-    if(err != 0){
-        pr_info("Failed to copy data to user space");
+    if (buffer_len > len - *offset) buffer_len = len - *offset;
+
+    if (copy_to_user(ubuf, buf + *offset, buffer_len)) {
         return -EFAULT;
     }
 
-    *offset = buffer_len;
+    *offset += buffer_len;
+    pr_info("Read: %s\n", buf);    
     return buffer_len;
 }
 
