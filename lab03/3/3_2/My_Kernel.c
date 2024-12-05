@@ -10,40 +10,33 @@
 char buf[BUFSIZE]; //kernel buffer
 
 static ssize_t Mywrite(struct file *fileptr, const char __user *ubuf, size_t buffer_len, loff_t *offset){
-    /*Your code here*/
-    if(*offset > 0) {
-        return 0;
-    }
-
     if(copy_from_user(buf, ubuf, buffer_len)) {
         return -EFAULT;
     }
-    buf[buffer_len] = '\0';
+    buf[buffer_len] = '\n';
+    buffer_len += 1;
+    buffer_len += snprintf(buf+buffer_len, BUFSIZE, 
+                    "PID: %d, TID: %d, time: %llu\n", 
+                    current->tgid, current->pid, current->utime/100/1000);
 
-    *offset = buffer_len+1;
-    return buffer_len+1;
-    /****************/
+    pr_info("Write: %s\n", buf);
+    return buffer_len;
 }
 
 
 static ssize_t Myread(struct file *fileptr, char __user *ubuf, size_t buffer_len, loff_t *offset){
-    /*Your code here*/
-    if(*offset > 0) {
+    if(*offset > 0){
         return 0;
     }
 
-    int len = snprintf(buf, BUFSIZE, 
-                    "PID: %d, TID: %d, time: %llu\n", 
-                    current->tgid, current->pid, current->utime/100/1000);
-
     int err = copy_to_user(ubuf, buf, buffer_len);
-    if(err != 0) {
+    if(err != 0){
+        pr_info("Failed to copy data to user space");
         return -EFAULT;
     }
-    
-    *offset = len;
-    return len;
-    /****************/
+
+    *offset = buffer_len;
+    return buffer_len;
 }
 
 static struct proc_ops Myops = {
@@ -58,6 +51,7 @@ static int My_Kernel_Init(void){
 }
 
 static void My_Kernel_Exit(void){
+    remove_proc_entry(procfs_name, NULL);
     pr_info("My kernel says GOODBYE");
 }
 

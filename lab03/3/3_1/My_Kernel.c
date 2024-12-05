@@ -25,7 +25,10 @@ static ssize_t Myread(struct file *fileptr, char __user *ubuf, size_t buffer_len
     }
 
     for_each_thread(current, thread) {
-        len += snprintf(buf + len, BUFSIZE - len, "PID: %d, TID: %d, Priority: %d, State: %d\n", thread->tgid, thread->tid, thread->prio, thread->__state);
+        if(current->pid == thread->pid){
+            continue;
+        }
+        len += snprintf(buf + len, BUFSIZE - len, "PID: %d, TID: %d, Priority: %d, State: %d\n", thread->tgid, thread->pid, thread->prio, thread->__state);
     }
 
     int err = copy_to_user(ubuf, buf, len);
@@ -50,6 +53,7 @@ static int My_Kernel_Init(void){
 }
 
 static void My_Kernel_Exit(void){
+    remove_proc_entry(procfs_name, NULL);
     pr_info("My kernel says GOODBYE");
 }
 
