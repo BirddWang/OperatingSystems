@@ -33,7 +33,7 @@ static ssize_t osfs_read(struct file *filp, char __user *buf, size_t len, loff_t
     if (*ppos + len > osfs_inode->i_size)
         len = osfs_inode->i_size - *ppos;
 
-    data_block = sb_info->data_blocks + osfs_inode->i_block * BLOCK_SIZE + *ppos;
+    data_block = sb_info->data_blocks + osfs_inode->i_blocks * BLOCK_SIZE + *ppos;
     if (copy_to_user(buf, data_block, len))
         return -EFAULT;
 
@@ -68,18 +68,34 @@ static ssize_t osfs_write(struct file *filp, const char __user *buf, size_t len,
     int ret;
 
     // Step2: Check if a data block has been allocated; if not, allocate one
+    if(!osfs_inode->i_blocks) {
+        osfs_inode->__i_ctime = current_time(inode);
+        ret = osfs_alloc_data_block(sb_info, &osfs_inode->i_blocks);
+    }
 
 
     // Step3: Limit the write length to fit within one data block
+    if(*ppos + len > BLOCK_SIZE) {
+        len = BLOCK_SIZE - *ppos;
+    }
 
 
     // Step4: Write data from user space to the data block
+    data_block = sb_info->data_blocks + osfs_inode->i_blocks * BLOCK_SIZE + *ppos;
 
 
     // Step5: Update inode & osfs_inode attribute
+    if(copy_from_user(data_block, buf, len)) {
+        return -EFAULT;
+    }
+    osfs_inode->i_size += len;
+    osfs_inode->__i_atime = current_time(inode);
+    osfs_inode->__i_mtime = current_time(inode);
 
 
     // Step6: Return the number of bytes written
+    bytes_written = len;
+    *ppos += len;
 
     
     return bytes_written;
